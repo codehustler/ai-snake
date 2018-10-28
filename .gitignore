@@ -1,0 +1,7 @@
+/target/
+/.project
+/.classpath
+/.settings
+/src/main/resources/static/node_modules*
+crash.txt
+config.properties

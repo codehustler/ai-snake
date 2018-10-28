@@ -22,7 +22,7 @@ public class SnakeGame extends JFrame {
 	public static final Random R = new Random(System.currentTimeMillis());
 	
 	private static final long serialVersionUID = 1L;
-	private static final int SLOW_DELAY = 800;
+	private static final int SLOW_DELAY = 200;
 	private static final int FAST_DELAY = 0;
 	
 	
@@ -117,7 +117,6 @@ public class SnakeGame extends JFrame {
 
 	private void resetPopulation() {
 		generationCounter++;
-		map.clearVisitorCache();
 		runners.clear();
 		runners.addAll(createRunners(playerFactory.createPlayers()));
 	}

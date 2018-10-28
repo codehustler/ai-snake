@@ -5,9 +5,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.checkerframework.dataflow.qual.SideEffectFree;
 import org.neuroph.core.NeuralNetwork;
-import org.neuroph.core.data.DataSet;
 import org.neuroph.nnet.MultiLayerPerceptron;
 import org.neuroph.nnet.learning.BackPropagation;
 import org.neuroph.util.TransferFunctionType;
@@ -15,7 +13,6 @@ import org.neuroph.util.data.norm.MaxMinNormalizer;
 import org.neuroph.util.random.DistortRandomizer;
 
 import codehustler.ml.snake.AbstractPlayer;
-import codehustler.ml.snake.ui.Snake;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,16 +28,16 @@ public class AIPlayer extends AbstractPlayer {
 	private final String uuid; 
 
 	private NeuralNetwork<BackPropagation> model;	
-	private double distortionRate = 1.05;
+	private double mutationRate = 1.05;
 	
 	private int inputSize = 24+3 /*x/y distance to food*/;
 	private int outputSize = 3;
-
-	DataSet currentSet = new DataSet(inputSize, outputSize);
+	
+	BackPropagation backPropagationLR = new BackPropagation();
 
 	public AIPlayer() {
 		this.uuid = UUID.randomUUID().toString();
-		createModel();
+//		createBasicModel();
 	}
 
 	public AIPlayer(AIPlayer otherPlayer) {
@@ -51,36 +48,35 @@ public class AIPlayer extends AbstractPlayer {
 
 	public AIPlayer(String weightsFile) {
 		this.uuid = UUID.randomUUID().toString();
-		createModel();
+		//TODO
+//		createBasicModel();
 		restore(weightsFile);
 	}
 	
-	private MultiLayerPerceptron createBasicModel() {
+	private MultiLayerPerceptron createBasicModel(int inputSize) {
 		int[] layerConfig = new int[] { inputSize, inputSize, outputSize };
 		MultiLayerPerceptron model = new MultiLayerPerceptron(TransferFunctionType.LINEAR, layerConfig);
-		model.setLearningRule(new BackPropagation());
+		model.setLearningRule(backPropagationLR);
+		model.randomizeWeights(R);
 		return model;
 	}
 
 	private void cloneModel(NeuralNetwork<BackPropagation> sourceModel) {
-		MultiLayerPerceptron model = createBasicModel();
+		MultiLayerPerceptron model = createBasicModel(sourceModel.getInputNeurons().length);
 		
 		model.setWeights(Arrays.stream(sourceModel.getWeights()).mapToDouble(Double::doubleValue).toArray());
-		DistortRandomizer distortRandomizer = new DistortRandomizer(distortionRate);
+		DistortRandomizer distortRandomizer = new DistortRandomizer(mutationRate);
 		distortRandomizer.setRandomGenerator(R);
 		model.randomizeWeights(distortRandomizer);
 		this.model = model;
 	}
 
-	private void createModel() {
-		MultiLayerPerceptron model = createBasicModel();
-		model.randomizeWeights(R);
-		this.model = model;
-	}
 
 	public void setInputs(double[] inputs) {
-//		this.score++;
-		
+
+		if ( model == null ) {
+			model = createBasicModel(inputs.length);
+		}
 		
 //		inputs = maxNormalize(inputs);
 //		inputs = invertInputs(inputs);
@@ -88,14 +84,12 @@ public class AIPlayer extends AbstractPlayer {
 //		Arrays.stream(inputs).forEach(i -> System.out.print(i + "  ###  "));
 //		System.out.println();
 		
+		
 		model.setInput(inputs);
 		model.calculate();
 
 		double[] output = model.getOutput();
 		
-		currentSet.clear();
-		currentSet.addRow(inputs, output);
-	
 		double left = output[0];
 		double straight = output[1];
 		double right = output[2];

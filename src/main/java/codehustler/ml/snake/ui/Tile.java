@@ -1,14 +1,7 @@
 package codehustler.ml.snake.ui;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Properties;
 
 import org.la4j.Vector;
 
@@ -39,9 +32,7 @@ public class Tile {
 	private Vector edgeAB, edgeBC, edgeCD, edgeDA;
 	private List<Vector> edges = new ArrayList<>();
 	private int value;
-	private Properties properties = new Properties();
 
-	private Map<Snake, Long> visitors = Collections.synchronizedMap(new HashMap<>());
 	
 	private final SnakeGame game;
 	
@@ -74,79 +65,10 @@ public class Tile {
 		return Vector.fromArray(d);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public <T> T getProperty(String key, Class<T> type, T defaultValue) {
-		return (T) properties.getOrDefault(key, defaultValue);
-	}
-	
-	public void render(Graphics2D g) {
-		cleanVisitorMap();
-		if (getProperty("START_FINISH", Boolean.class, false)) {
-			g.setColor(Color.WHITE); 
-		} else if ( value == 0 ) {
-			g.setColor(Color.LIGHT_GRAY);
-		} else g.setColor(Color.BLACK);
-		
-		g.fillRect((int)address.get(0)*TILE_SIZE, (int)address.get(1)*TILE_SIZE, TILE_SIZE , TILE_SIZE );
-	
-		//g.setColor(Color.LIGHT_GRAY);
-//		g.drawRect((int)address.get(0)*TILE_SIZE, (int)address.get(1)*TILE_SIZE, TILE_SIZE , TILE_SIZE );
-		
-//		edges.forEach(e->drawLine(e, g));
-		
-//		g.setColor(Color.RED);
-//		renderBreadcrumbTrails(g);
-	}
-	
-	private void cleanVisitorMap() {
-		long maxAge = 20_000;
-		visitors.entrySet().removeIf(e -> game.getTimecode()- e.getValue() > maxAge );
-	}
-	
-//	private void renderBreadcrumbTrails(Graphics2D g) {
-////		long maxAge = 2000;
-////		long currentTimecode = RunnerGame.getTimecode();
-//		
-//		Optional<Long> mostRecentTimecode = visitors.entrySet().stream().filter(e->!e.getKey().isGameOver()).map(e->e.getValue()).max(Comparator.naturalOrder());
-////		Optional<Long> mostRecentTimecode = visitors.values().stream().max(Comparator.naturalOrder())
-//		
-//		if ( mostRecentTimecode.isPresent() ) {
-//			//long recentAge = currentTimecode - mostRecentTimecode.get();
-////			if ( recentAge < maxAge ) {
-//				g.fillOval((int) address.get(0) * TILE_SIZE + TILE_SIZE/2 - 2, (int) address.get(1) * TILE_SIZE + TILE_SIZE/2 - 2, 4, 4);
-////			}
-//		}
-//	}
-	
-	@SuppressWarnings("unused")
-	private void drawLine(Vector edge, Graphics2D g) {
-		g.drawLine((int)edge.get(0), (int)edge.get(1), (int)edge.get(2), (int)edge.get(3));
-	}
 
-	public void addOccupant(Snake mazeRunner) {
-
-		//MazeRunner previousVisit = ma
-		
-		this.visitors.put(mazeRunner, game.getTimecode());
+	public boolean isWall() {
+		return value == 1;
 	}
-	
-	public Optional<Long> lastVisited(Snake runner) {
-		
-		return Optional.ofNullable(visitors.get(runner));
-	}
-	
-	public void clearVisitorCache() {
-		this.visitors.clear();
-	}
-	
-	public void clearVisitorCache(Snake runner) {
-		this.visitors.remove(runner);
-	}
-
-	public void setProperty(String key, Object value) {
-		properties.put(key, value);
-	}
-
 	
 }
 

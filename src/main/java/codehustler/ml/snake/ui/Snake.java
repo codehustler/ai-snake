@@ -81,31 +81,6 @@ public strictfp class Snake {
 	}
 
 	private void init() {
-		double angleDeg = 90;
-		double angle = Math.toRadians(-angleDeg);
-
-		rotationMatrixCW.set(0, 0, Math.cos(angle));
-		rotationMatrixCW.set(1, 0, Math.sin(angle));
-		rotationMatrixCW.set(0, 1, -Math.sin(angle));
-		rotationMatrixCW.set(1, 1, Math.cos(angle));
-
-		angle = Math.toRadians(angleDeg);
-		rotationMatrixCCW.set(0, 0, Math.cos(angle));
-		rotationMatrixCCW.set(1, 0, Math.sin(angle));
-		rotationMatrixCCW.set(0, 1, -Math.sin(angle));
-		rotationMatrixCCW.set(1, 1, Math.cos(angle));
-
-		angle = Math.toRadians(-45);
-		rotationMatrixCW_45.set(0, 0, Math.cos(angle));
-		rotationMatrixCW_45.set(1, 0, Math.sin(angle));
-		rotationMatrixCW_45.set(0, 1, -Math.sin(angle));
-		rotationMatrixCW_45.set(1, 1, Math.cos(angle));
-
-		angle = Math.toRadians(180);
-		rotationMatrix_180.set(0, 0, Math.cos(angle));
-		rotationMatrix_180.set(1, 0, Math.sin(angle));
-		rotationMatrix_180.set(0, 1, -Math.sin(angle));
-		rotationMatrix_180.set(1, 1, Math.cos(angle));
 		
 		// set speed to be one tile
 		velocity = BasicVector.fromArray(new double[] { 0d, -1d });
@@ -168,10 +143,10 @@ public strictfp class Snake {
 
 		double[] distances = new double[3];
 
-		distances[0] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCCW)))
+		distances[0] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCCW_90)))
 				.euclideanNorm();
 		distances[1] = foodTile.getCenter().subtract(position.add(velocity)).euclideanNorm();
-		distances[2] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCW))).euclideanNorm();
+		distances[2] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCW_90))).euclideanNorm();
 		distances = AIPlayer.maxNormalize(distances);
 
 		observations.add(distances[0] < Math.min(distances[1], distances[2]) ? 10d : 0d);
@@ -202,22 +177,25 @@ public strictfp class Snake {
 		dir = dir.multiply(rotationMatrix_180);
 		
 		int distance = 1;
-		for ( int size = 3; size <= 7; size += 2) {
+		double nogoValue = 1;
+		double neutralValue = 0.5;
+		double gotoValue = 0;
+		
+		for ( int size = 3; size <= 5; size += 2) {
 			for ( int n = 1; n <= 4*(size-1); n++ ) {
 				pos = pos.add(dir);
 				if ( n % (size-1) == 0 ) {
-					dir = dir.multiply(rotationMatrixCW);		
+					dir = dir.multiply(rotationMatrixCW_90);		
 				}
 				observedTiles.add(map.getTileUnderPosition(pos));
-				Tile t = map.getTileUnderPosition(pos);
-				double value = 1;/ //distance;
-				observations.add(t.isWall() ? value : tail.contains(t) ? value : 0);
+				Tile t = map.getTileUnderPosition(pos);				
+				observations.add(t.isWall() ? nogoValue : tail.contains(t) ? nogoValue*10 : 0);
 			}
 			dir = dir.multiply(rotationMatrix_180);
 			pos = pos.add(dir); // one "left"
-			dir = dir.multiply(rotationMatrixCW);
+			dir = dir.multiply(rotationMatrixCW_90);
 			pos = pos.add(dir); // one "up"
-			dir = dir.multiply(rotationMatrixCW); // "look" "right"
+			dir = dir.multiply(rotationMatrixCW_90); // "look" "right"
 			distance++;
 		}
 	}

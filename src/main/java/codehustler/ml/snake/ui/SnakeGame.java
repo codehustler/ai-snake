@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -147,7 +146,6 @@ public class SnakeGame extends JFrame {
 	private void resetPopulation() {
 		updateStats();
 		generationCounter++;
-		map.clearVisitorCache();
 		snakes.clear();
 		snakes.addAll(createRunners(playerFactory.createPlayers()));
 	}

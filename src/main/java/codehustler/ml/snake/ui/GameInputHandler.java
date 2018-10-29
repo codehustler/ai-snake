@@ -54,6 +54,8 @@ public class GameInputHandler implements KeyListener {
 			game.killCurrentPopulation();
 		} else if ( e.getKeyChar() == 'r' ) {
 			game.toggleRender();
+		} else if ( e.getKeyChar() == 'v' ) {
+			game.toggleRenderFieldOfView();
 		} 
 	}
 }

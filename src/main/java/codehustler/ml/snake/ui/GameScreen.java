@@ -30,7 +30,7 @@ public class GameScreen extends JPanel {
 	}
 
 	private void renderRunners(Graphics2D g) {
-		game.getRunners().forEach(m -> m.render(g));
+		game.getSnakes().forEach(m -> m.render(g));
 	}
 
 	private void renderMap(Graphics2D g) {
@@ -38,30 +38,52 @@ public class GameScreen extends JPanel {
 	}
 	
 	private void renderStats(Graphics2D g) {
-		g.setColor(Color.BLACK);
-		int x = game.getMap().getTiles().size() * Tile.TILE_SIZE + 10;
+		List<Snake> snakes = new ArrayList<>(game.getSnakes());
+		int left = game.getMap().getTiles().size() * Tile.TILE_SIZE + 10;
 		
+		AtomicInteger x = new AtomicInteger(left);
 		AtomicInteger y = new AtomicInteger(15);
 		
-		List<Snake> snakes = new ArrayList<>(game.getRunners());
-		for ( int n = 0; n < snakes.size(); n++ ) {
-			if ( n % 10 == 0 ) {
-				x += 140;
-				y.set(15);
-			}
-			
-			Snake s = snakes.get(n);
+		int colWidth = 100;
+		int rowHeight = 15;
+		int snakeCount = snakes.size();
+		int m = 15; //margin
+		
+		g.setColor(Color.WHITE);
+		g.drawLine(x.get(), y.get()+3, x.get()+5*colWidth, y.get()+3);
+		
+		g.drawString("Score", x.get(), y.get());
+		
+		g.drawString("Steps", x.addAndGet(colWidth), y.get());
+		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
+		
+		g.drawString("Exploration", x.addAndGet(colWidth), y.get());
+		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
+		
+		g.drawString("Energy", x.addAndGet(colWidth), y.get());
+		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
+		
+		g.drawString("CoD", x.addAndGet(colWidth), y.get());
+		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
+		
+		y.addAndGet(2);
+		snakes.forEach(s->{
 			if ( s.isGameOver() ) {
 				g.setColor(Color.GRAY);
 			} else {
 				g.setColor(s.getSnakeColor());
 			}
+			x.set(left);
+			y.addAndGet(rowHeight);
 			
-			g.drawString("Exploration: " + (int)(s.getPlayer().getExploration()*100), x, y.getAndAdd(20));
-			g.drawString("Score          : " + s.getPlayer().getScore() + "_" + s.getPlayer().getSteps(), x, y.getAndAdd(20));
-			g.drawString("Energy         : " + s.getEnergy(), x, y.getAndAdd(20));
-			
-		}
+			g.drawString(""+s.getPlayer().getScore(), x.get(), y.get());
+			g.drawString(""+s.getPlayer().getSteps(), x.addAndGet(colWidth), y.get());
+			g.drawString(""+(int)(s.getPlayer().getExploration()*100), x.addAndGet(colWidth), y.get());
+			g.drawString(""+s.getEnergy(), x.addAndGet(colWidth), y.get());
+			g.drawString(""+(s.getCauseOfDeath() != null ? s.getCauseOfDeath() : ""), x.addAndGet(colWidth), y.get());
+		});
+		
+		
 		
 	}
 

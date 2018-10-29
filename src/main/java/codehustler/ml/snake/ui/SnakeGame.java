@@ -5,7 +5,9 @@ import java.awt.EventQueue;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,18 +17,19 @@ import javax.swing.JFrame;
 import codehustler.ml.snake.HumanPlayer;
 import codehustler.ml.snake.Player;
 import codehustler.ml.snake.PlayerFactory;
+import codehustler.ml.snake.ui.Snake.CauseOfDeath;
 import lombok.Getter;
 import lombok.Setter;
 
 public class SnakeGame extends JFrame {
 	public static final Random R = new Random(System.currentTimeMillis());
-	
+
 	private static final long serialVersionUID = 1L;
 	private static final int SLOW_DELAY = 200;
 	private static final int FAST_DELAY = 0;
-	
-	
-	@Getter @Setter
+
+	@Getter
+	@Setter
 	private int targetLaps = 3;
 
 	private GameScreen gameScreen;
@@ -34,15 +37,17 @@ public class SnakeGame extends JFrame {
 	private GameMap map;
 
 	private int generationCounter = 0;
-	
+
 	@Getter
-	private List<Snake> runners = Collections.synchronizedList(new ArrayList<>());
+	private List<Snake> snakes = Collections.synchronizedList(new ArrayList<>());
 
 	@Setter
 	private int selectedDelay = FAST_DELAY;
 
-	@Setter
 	private boolean rendergame = true;
+
+	@Getter
+	private boolean renderFieldOfView = false;
 
 	@Getter
 	private long timecode = 0;
@@ -51,8 +56,15 @@ public class SnakeGame extends JFrame {
 	private PlayerFactory playerFactory;
 
 	private GameInputHandler inputHandler;
+
+	double totalStarvationCount = 0;
+	double totalSuicideCount = 0;
+	double totalCollisionCount = 0;
+
+	int highScore = 0;
 	
-	/** 
+
+	/**
 	 * starts the game with a human player
 	 * 
 	 * @param args
@@ -68,14 +80,13 @@ public class SnakeGame extends JFrame {
 		});
 		game.run();
 	}
-	
 
 	public SnakeGame(int mapSize) throws Exception {
 		this.setSize(400, 400);
 		this.setTitle("AI Runner");
 		this.setLayout(new BorderLayout());
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		
+
 		this.inputHandler = new GameInputHandler(this);
 		this.addKeyListener(inputHandler);
 
@@ -92,7 +103,6 @@ public class SnakeGame extends JFrame {
 		});
 	}
 
-
 	private List<Snake> createRunners(Set<Player> players) {
 		players.stream().filter(HumanPlayer.class::isInstance).forEach(inputHandler::addHumanPlayer);
 		return players.stream().map(p -> new Snake(p, this)).collect(Collectors.toList());
@@ -100,8 +110,8 @@ public class SnakeGame extends JFrame {
 
 	public void run() {
 		System.out.println("creating initial population");
-		runners.clear();
-		runners.addAll(createRunners(playerFactory.createPlayers()));
+		snakes.clear();
+		snakes.addAll(createRunners(playerFactory.createPlayers()));
 
 		while (true) {
 			updateGame();
@@ -115,14 +125,35 @@ public class SnakeGame extends JFrame {
 		}
 	}
 
+	private void updateStats() {
+		totalStarvationCount += snakes.stream().filter(s -> s.getCauseOfDeath() == CauseOfDeath.STARVATION).count();
+		totalSuicideCount += snakes.stream().filter(s -> s.getCauseOfDeath() == CauseOfDeath.SUICIDE).count();
+		totalCollisionCount += snakes.stream().filter(s -> s.getCauseOfDeath() == CauseOfDeath.COLLISION).count();
+
+		double totalSize = totalStarvationCount + totalSuicideCount + totalCollisionCount;
+
+		int totalStarvationRate = (int) (totalStarvationCount / totalSize * 100);
+		int totalSuicideRate = (int) (totalSuicideCount / totalSize * 100);
+		int totalCollisionRate = (int) (totalCollisionCount / totalSize * 100);
+
+		Player popBest = snakes.stream().map(Snake::getPlayer).sorted()
+				.collect(Collectors.maxBy(Comparator.naturalOrder())).get();
+		highScore = Math.max(highScore, (int) popBest.getScore());
+
+		System.out.println(String.format("Suicide: %s Collision: %s Starvation: %s Best: %s", totalSuicideRate,
+				totalCollisionRate, totalStarvationRate, popBest.getScore()));
+	}
+
 	private void resetPopulation() {
+		updateStats();
 		generationCounter++;
-		runners.clear();
-		runners.addAll(createRunners(playerFactory.createPlayers()));
+		map.clearVisitorCache();
+		snakes.clear();
+		snakes.addAll(createRunners(playerFactory.createPlayers()));
 	}
 
 	private boolean isPopulationAlive() {
-		return this.runners.stream().filter(m -> !m.isGameOver()).count() > 0;
+		return this.snakes.stream().filter(m -> !m.isGameOver()).count() > 0;
 	}
 
 	public void updateGame() {
@@ -130,9 +161,8 @@ public class SnakeGame extends JFrame {
 			resetPopulation();
 		}
 
-		runners.parallelStream().forEach(Snake::update);
-		this.setTitle(String.format("AI Runner - Generation: %s Population: %s", generationCounter,
-				runners.stream().filter(m -> !m.isGameOver()).count()));
+		snakes.parallelStream().forEach(Snake::update);
+		this.setTitle(String.format("Snake - Gen: %s Best: %s", generationCounter, highScore));
 
 		if (rendergame) {
 			gameScreen.repaint();
@@ -150,10 +180,14 @@ public class SnakeGame extends JFrame {
 	}
 
 	public void killCurrentPopulation() {
-		runners.forEach(m -> m.setGameOver(true));
+		snakes.forEach(m -> m.setGameOver(true));
 	}
 
 	public void toggleRender() {
 		rendergame = !rendergame;
+	}
+
+	public void toggleRenderFieldOfView() {
+		renderFieldOfView = !renderFieldOfView;
 	}
 }

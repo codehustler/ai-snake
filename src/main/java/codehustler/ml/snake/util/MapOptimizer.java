@@ -35,7 +35,7 @@ public class MapOptimizer {
 			for (int x1 = x; x1 >= 0; x1--) {
 				adjTile = tiles.get(y).get(x1);
 //				System.out.print(adjTile + ",       ");
-				if (adjTile.getValue() == 1 || forbiddenTiles.contains(adjTile)) {
+				if (adjTile.isWall() || forbiddenTiles.contains(adjTile)) {
 					wallX.add(adjTile);
 				} else
 					break;
@@ -44,7 +44,7 @@ public class MapOptimizer {
 			for (int x1 = x; x1 < maxX; x1++) {
 				adjTile = tiles.get(y).get(x1);
 //				System.out.print(adjTile + ",       ");
-				if (adjTile.getValue() == 1 || forbiddenTiles.contains(adjTile)) {
+				if (adjTile.isWall() || forbiddenTiles.contains(adjTile)) {
 					wallX.add(adjTile);
 				} else
 					break;
@@ -54,7 +54,7 @@ public class MapOptimizer {
 			// search up/down
 			for (int y1 = y; y1 >= 0; y1--) {
 				adjTile = tiles.get(y1).get(x);
-				if (adjTile.getValue() == 1 || forbiddenTiles.contains(adjTile)) {
+				if (adjTile.isWall() || forbiddenTiles.contains(adjTile)) {
 					wallY.add(adjTile);
 				} else
 					break;
@@ -62,7 +62,7 @@ public class MapOptimizer {
 
 			for (int y1 = y; y1 < maxY; y1++) {
 				adjTile = tiles.get(y1).get(x);
-				if (adjTile.getValue() == 1 || forbiddenTiles.contains(adjTile)) {
+				if (adjTile.isWall() || forbiddenTiles.contains(adjTile)) {
 					wallY.add(adjTile);
 				} else
 					break;

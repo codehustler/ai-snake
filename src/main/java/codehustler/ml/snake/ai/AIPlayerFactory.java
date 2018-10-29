@@ -20,7 +20,7 @@ public class AIPlayerFactory implements PlayerFactory {
 
 	private final int populationSize;
 	
-	private Set<Player> previousGeneration = new HashSet<>();
+	private Set<Player> population = new HashSet<>();
 
 
 	public Player createAIPlayer(AIPlayer player) {
@@ -30,20 +30,20 @@ public class AIPlayerFactory implements PlayerFactory {
 	@Override
 	public Set<Player> createPlayers() {
 		Set<Player> players = new HashSet<>();
-			
-		int playersToKeep = (int) (previousGeneration.size() * 0.2d);
-		int playersToBreed = (int) (previousGeneration.size() * 0.7d);
+		
+		int playersToKeep = (int) (population.size() * 0.2d);
+		int playersToBreed = (int) (population.size() * 0.7d);
 		int newRandomPlayers = (int) (populationSize-(playersToKeep+playersToBreed));
 
 //		System.out.println("generation result: ");
-		Optional<Player> best = previousGeneration.stream().sorted().collect(Collectors.maxBy(Comparator.naturalOrder()));
+//		Optional<Player> best = population.stream().sorted().collect(Collectors.maxBy(Comparator.naturalOrder()));
 		
-		best.ifPresent(p->{
-			System.out.println("best: " + p.getScore() + "_" + (int)(p.getExploration()*100));
-//			p.save("score_" + ((int)p.getScore()) + "");			
-		});
+//		best.ifPresent(p->{
+//			System.out.println("best: " + p.getScore() + "_" + (int)(p.getExploration()*100));
+////			p.save("score_" + ((int)p.getScore()) + "");			
+//		});
 		
-		List<Player> survivors = previousGeneration.stream().sorted()
+		List<Player> survivors = population.stream().sorted()
 				.skip(populationSize  - playersToKeep).collect(Collectors.toList());
 		
 //		survivors.stream().sorted().forEach(p->{
@@ -70,8 +70,8 @@ public class AIPlayerFactory implements PlayerFactory {
 		players.addAll(newBorns);
 		players.addAll(newRandoms);
 
-		previousGeneration.clear();
-		previousGeneration.addAll(players);
+		population.clear();
+		population.addAll(players);
 		return players;
 	}
 }

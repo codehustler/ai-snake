@@ -22,9 +22,9 @@ public class GameMap {
 	private Set<Wall> walls = new HashSet<>();
 
 	private final SnakeGame game;
-
-	private int floorTileCount;
-
+	
+	private int floorTileCount; 
+	
 	public GameMap(int size, SnakeGame game) throws Exception {
 		this.game = game;
 		loadMap(size);
@@ -33,11 +33,11 @@ public class GameMap {
 	public Tile getRandomTile() {
 		return getRandomTile(1);
 	}
-
+	
 	public Tile getRandomTile(int minWallDistance) {
 		Tile tile;
-		int y = minWallDistance + SnakeGame.R.nextInt(tiles.size() - (2 * minWallDistance));
-		int x = minWallDistance + SnakeGame.R.nextInt(tiles.get(y).size() - 2 * (minWallDistance));
+		int y = minWallDistance + SnakeGame.R.nextInt(tiles.size()-(2*minWallDistance));
+		int x = minWallDistance + SnakeGame.R.nextInt(tiles.get(y).size()-2*(minWallDistance));
 		tile = tiles.get(y).get(x);
 
 		return tile;
@@ -53,6 +53,7 @@ public class GameMap {
 		g.fillRect(0, 0, tiles.get(0).size() * Tile.TILE_SIZE, tiles.size() * Tile.TILE_SIZE);
 	}
 
+	
 	private void renderWalls(Graphics2D g) {
 		g.setColor(Color.BLACK);
 		walls.forEach(v -> {
@@ -62,12 +63,12 @@ public class GameMap {
 	}
 
 	private void loadMap(int size) throws IOException {
-		for (int y = 0; y < size; y++) {
+		for ( int y = 0; y < size; y++ ) { 
 			List<Tile> tileRow = new ArrayList<>();
 			tiles.add(tileRow);
-			for (int x = 0; x < size; x++) {
+			for ( int x = 0; x < size; x++ ) {
 				Tile t;
-				if (y == 0 || x == 0 || y == size - 1 || x == size - 1) {
+				if ( y == 0 || x == 0 || y == size-1 || x == size-1 ) {
 					t = new Tile(vector(x, y), 1, game);
 					wallTiles.add(t);
 				} else {
@@ -75,25 +76,26 @@ public class GameMap {
 					floorTileCount++;
 				}
 				tileRow.add(t);
-			}
+			}	
 		}
+		
 		this.walls = MapOptimizer.optimizeMap(tiles, wallTiles);
 	}
 
 	public Tile getTileByAddress(Vector address) {
-
-		int x = (int) address.get(0);
-		int y = (int) address.get(1);
+		
+		int x = (int)address.get(0);
+		int y = (int)address.get(1);
 		int size = tiles.size();
-
-		x = Math.min(Math.max(x, 0), size - 1);
-		y = Math.min(Math.max(y, 0), size - 1);
-
+		
+		x = Math.min(Math.max(x, 0), size-1);
+		y = Math.min(Math.max(y, 0), size-1);
+		
 		return tiles.get(y).get(x);
 	}
 
 	public Tile getTileUnderPosition(Vector position) {
-		Vector address = positionToAddress(position);
+		Vector address = positionToAddress(position);		
 		return getTileByAddress(address);
 	}
 

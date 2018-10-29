@@ -3,9 +3,12 @@ package codehustler.ml.snake.ui;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import org.la4j.Matrix;
@@ -16,12 +19,18 @@ import com.google.common.collect.EvictingQueue;
 
 import codehustler.ml.snake.Player;
 import codehustler.ml.snake.ai.AIPlayer;
+import codehustler.ml.snake.util.MapOptimizer;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(of = "player")
 public strictfp class Snake {
+	
+	enum CauseOfDeath {STARVATION, SUICIDE, COLLISION}
+
+	public static int[] FIELD_OF_VIEW_ANGLES = new int[] { 45, 90, 135 };
+	public static final int runnerRadius = 10;
 
 	private static final Matrix rotationMatrixCW_90 = createRotationMatrix(-90);
 	private static final Matrix rotationMatrixCCW_90 = createRotationMatrix(90);
@@ -39,9 +48,9 @@ public strictfp class Snake {
 
 	private final SnakeGame game;
 
+	
 	boolean gameOver = false;
 
-//	private double[] observations;
 	private List<Double> observations = new ArrayList<>();
 
 	private Tile occupiedTile;
@@ -56,9 +65,12 @@ public strictfp class Snake {
 
 	private Color snakeColor = new Color(SnakeGame.R.nextInt(256), SnakeGame.R.nextInt(256), SnakeGame.R.nextInt(256));
 
+
 	private List<Tile> observedTiles = new ArrayList<>();
 
 	private Set<Tile> exploredTiles = new HashSet<>();
+	
+	private CauseOfDeath causeOfDeath = null;
 
 	public Snake(Player player, SnakeGame game) {
 		this.game = game;
@@ -69,6 +81,32 @@ public strictfp class Snake {
 	}
 
 	private void init() {
+		double angleDeg = 90;
+		double angle = Math.toRadians(-angleDeg);
+
+		rotationMatrixCW.set(0, 0, Math.cos(angle));
+		rotationMatrixCW.set(1, 0, Math.sin(angle));
+		rotationMatrixCW.set(0, 1, -Math.sin(angle));
+		rotationMatrixCW.set(1, 1, Math.cos(angle));
+
+		angle = Math.toRadians(angleDeg);
+		rotationMatrixCCW.set(0, 0, Math.cos(angle));
+		rotationMatrixCCW.set(1, 0, Math.sin(angle));
+		rotationMatrixCCW.set(0, 1, -Math.sin(angle));
+		rotationMatrixCCW.set(1, 1, Math.cos(angle));
+
+		angle = Math.toRadians(-45);
+		rotationMatrixCW_45.set(0, 0, Math.cos(angle));
+		rotationMatrixCW_45.set(1, 0, Math.sin(angle));
+		rotationMatrixCW_45.set(0, 1, -Math.sin(angle));
+		rotationMatrixCW_45.set(1, 1, Math.cos(angle));
+
+		angle = Math.toRadians(180);
+		rotationMatrix_180.set(0, 0, Math.cos(angle));
+		rotationMatrix_180.set(1, 0, Math.sin(angle));
+		rotationMatrix_180.set(0, 1, -Math.sin(angle));
+		rotationMatrix_180.set(1, 1, Math.cos(angle));
+		
 		// set speed to be one tile
 		velocity = BasicVector.fromArray(new double[] { 0d, -1d });
 		velocity = velocity.multiply(Tile.TILE_SIZE / velocity.euclideanNorm());
@@ -80,8 +118,6 @@ public strictfp class Snake {
 		}
 
 		foodTile = map.getRandomTile();
-
-//		observations = new double[24 + 3];
 	}
 
 	public synchronized void update() {
@@ -91,7 +127,7 @@ public strictfp class Snake {
 
 		energy--;
 		if (energy == 0) {
-			gameOver();
+			gameOver(CauseOfDeath.STARVATION);
 			return;
 		}
 
@@ -117,7 +153,7 @@ public strictfp class Snake {
 
 		List<Tile> headInTailTiles = tail.stream().filter(t -> t.equals(occupiedTile)).collect(Collectors.toList());
 		if (headInTailTiles.size() > 1) {
-			gameOver();
+			gameOver(CauseOfDeath.SUICIDE);
 			return;
 		}
 
@@ -132,54 +168,56 @@ public strictfp class Snake {
 
 		double[] distances = new double[3];
 
-		distances[0] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCCW_90)))
+		distances[0] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCCW)))
 				.euclideanNorm();
 		distances[1] = foodTile.getCenter().subtract(position.add(velocity)).euclideanNorm();
-		distances[2] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCW_90))).euclideanNorm();
+		distances[2] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCW))).euclideanNorm();
 		distances = AIPlayer.maxNormalize(distances);
 
 		observations.add(distances[0] < Math.min(distances[1], distances[2]) ? 10d : 0d);
 		observations.add(distances[1] < Math.min(distances[0], distances[2]) ? 10d : 0d);
 		observations.add(distances[2] < Math.min(distances[0], distances[1]) ? 10d : 0d);
-		
 		player.setInputs(observations.stream().mapToDouble(d -> d).toArray());
 		observations.clear();
 	}
 
 	private void updateObservedTiles() {
-
+		
 		observedTiles.clear();
 
-		/*
-		 * 3: 8 | 4*2 5: 16 | 4*4 7: 24 | 4*6 9: 32 | 4*8
+		/* 
+		 * 3: 8  | 4*2
+		 * 5: 16 | 4*4
+		 * 7: 24 | 4*6
+		 * 9: 32 | 4*8
 		 */
-
+		
 		// place pos at 0,0 of first shell
 		Vector dir = velocity.copy();
 		Vector pos = position.add(dir); // 1,0
 		dir = dir.multiply(rotationMatrixCCW_90);
 		pos = pos.add(dir); // 0,0
-
+		
 		// rotate dir to look CW
 		dir = dir.multiply(rotationMatrix_180);
-
+		
 		int distance = 1;
-		for (int size = 3; size <= 7; size += 2) {
-			for (int n = 1; n <= 4 * (size - 1); n++) {
+		for ( int size = 3; size <= 7; size += 2) {
+			for ( int n = 1; n <= 4*(size-1); n++ ) {
 				pos = pos.add(dir);
-				if (n % (size - 1) == 0) {
-					dir = dir.multiply(rotationMatrixCW_90);
+				if ( n % (size-1) == 0 ) {
+					dir = dir.multiply(rotationMatrixCW);		
 				}
 				observedTiles.add(map.getTileUnderPosition(pos));
 				Tile t = map.getTileUnderPosition(pos);
-				double value = 1;// / distance;
+				double value = 1;/ //distance;
 				observations.add(t.isWall() ? value : tail.contains(t) ? value : 0);
 			}
 			dir = dir.multiply(rotationMatrix_180);
 			pos = pos.add(dir); // one "left"
-			dir = dir.multiply(rotationMatrixCW_90);
+			dir = dir.multiply(rotationMatrixCW);
 			pos = pos.add(dir); // one "up"
-			dir = dir.multiply(rotationMatrixCW_90); // "look" "right"
+			dir = dir.multiply(rotationMatrixCW); // "look" "right"
 			distance++;
 		}
 	}
@@ -206,7 +244,8 @@ public strictfp class Snake {
 		tail = newTail;
 	}
 
-	private void gameOver() {
+	private void gameOver(CauseOfDeath cod) {
+		this.causeOfDeath = cod;
 		this.gameOver = true;
 	}
 
@@ -221,6 +260,30 @@ public strictfp class Snake {
 		
 		return  rotationMatrix;
 	}
+
+//	private void calculateViewport() {
+////		AtomicInteger index = new AtomicInteger();
+////		viewportIntersections.clear();
+////		fieldOfView.forEach(v->{
+////			nearestIntersection(combine(position, position.add(v)), index.getAndIncrement()).ifPresent(viewportIntersections::add);	
+////		});
+//		
+////		leftTile = map.getTileUnderPosition(position.add(velocity.multiply(rotationMatrixCCW)));
+////		frontTile = map.getTileUnderPosition(position.add(velocity));
+////		rightTile = map.getTileUnderPosition(position.add(velocity.multiply(rotationMatrixCW)));
+//	}
+
+//	private Vector rotateVector(Vector v, double angleDeg) {
+//		double angle = Math.toRadians(-angleDeg);
+//
+//		Matrix rotationMatrix = Matrix.zero(2, 2);
+//		rotationMatrix.set(0, 0, Math.cos(angle));
+//		rotationMatrix.set(1, 0, Math.sin(angle));
+//		rotationMatrix.set(0, 1, -Math.sin(angle));
+//		rotationMatrix.set(1, 1, Math.cos(angle));
+//
+//		return v.multiply(rotationMatrix);
+//	}
 
 	public synchronized void render(Graphics2D g) {
 
@@ -263,14 +326,15 @@ public strictfp class Snake {
 //			g.drawLine((int)position.get(0), (int)position.get(1), (int)v.get(0), (int)v.get(1));
 //		});
 
-//		observedTiles.stream().forEach(t->{			
-//			int x = t.getValue() == 1 ? 1 : tail.contains(t) ? 1 : 0;
-//			if ( x == 0 ) {
-//				drawTileBorder(t, g);
-//			} else {
-//				fillTile(t, g);
-//			}
-//		});
+		if ( game.isRenderFieldOfView() ) {
+			observedTiles.stream().forEach(t->{			
+				if (t.isWall() || tail.contains(t)) {
+					fillTile(t, g);
+				} else {
+					drawTileBorder(t, g);
+				}
+			});
+		}
 	}
 
 	private void renderFood(Graphics2D g) {
@@ -291,7 +355,7 @@ public strictfp class Snake {
 	private void collisionCheck() {
 		Tile tile = map.getTileUnderPosition(position);
 		if (tile.getValue() == 1) {
-			gameOver();
+			gameOver(CauseOfDeath.COLLISION);
 		}
 	}
 }

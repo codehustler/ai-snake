@@ -137,7 +137,10 @@ public class SnakeGame extends JFrame {
 
 		Player popBest = snakes.stream().map(Snake::getPlayer).sorted()
 				.collect(Collectors.maxBy(Comparator.naturalOrder())).get();
-		highScore = Math.max(highScore, (int) popBest.getScore());
+		
+		
+		highScore = (int) Math.max(popBest.getScore(), highScore);
+		
 
 		System.out.println(String.format("Suicide: %s Collision: %s Starvation: %s Best: %s", totalSuicideRate,
 				totalCollisionRate, totalStarvationRate, popBest.getScore()));
@@ -150,19 +153,37 @@ public class SnakeGame extends JFrame {
 		snakes.addAll(createRunners(playerFactory.createPlayers()));
 	}
 
-	private boolean isPopulationAlive() {
-		return this.snakes.stream().filter(m -> !m.isGameOver()).count() > 0;
+//	private boolean isPopulationAlive() {
+//		return this.snakes.stream().filter(m -> !m.isGameOver()).count() > 0;
+//	}
+	
+	private long getPopulationSize() {
+		return snakes.stream().filter(m -> !m.isGameOver()).count();
 	}
 
 	public void updateGame() {
-		if (!isPopulationAlive()) {
+		
+		long popSize = getPopulationSize();
+		
+		if (popSize == 0) {
 			resetPopulation();
 		}
 
-		snakes.parallelStream().forEach(Snake::update);
+		snakes.parallelStream().forEach(Snake::update);		
 		this.setTitle(String.format("Snake - Gen: %s Best: %s", generationCounter, highScore));
+		
+		boolean renderOverwrite = rendergame;
+		
+//		Player popBest = snakes.stream().map(Snake::getPlayer).sorted().collect(Collectors.maxBy(Comparator.naturalOrder())).get();
+//		if ( popSize == 1 && popBest.getScore() > highScore ) {
+//			renderOverwrite = true;
+//			selectedDelay = SLOW_DELAY;
+//		} else {
+//			selectedDelay = FAST_DELAY;
+//		}
+		
 
-		if (rendergame) {
+		if (rendergame || renderOverwrite) {
 			gameScreen.repaint();
 		}
 

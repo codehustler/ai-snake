@@ -28,7 +28,7 @@ public class AIPlayer extends AbstractPlayer {
 	private final String uuid; 
 
 	private NeuralNetwork<BackPropagation> model;	
-	private double mutationRate = 1.05;
+	private double mutationRate = 5.0;
 	
 	private int inputSize = 24+3 /*x/y distance to food*/;
 	private int outputSize = 3;

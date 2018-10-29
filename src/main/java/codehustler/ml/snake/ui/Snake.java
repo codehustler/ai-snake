@@ -4,13 +4,17 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Triple;
 import org.la4j.Matrix;
 import org.la4j.Vector;
 import org.la4j.vector.dense.BasicVector;
@@ -149,9 +153,10 @@ public strictfp class Snake {
 		distances[2] = foodTile.getCenter().subtract(position.add(velocity.multiply(rotationMatrixCW_90))).euclideanNorm();
 		distances = AIPlayer.maxNormalize(distances);
 
-		observations.add(distances[0] < Math.min(distances[1], distances[2]) ? 10d : 0d);
-		observations.add(distances[1] < Math.min(distances[0], distances[2]) ? 10d : 0d);
-		observations.add(distances[2] < Math.min(distances[0], distances[1]) ? 10d : 0d);
+//		observations.add(distances[0] < Math.min(distances[1], distances[2]) ? 10d : 0d);
+//		observations.add(distances[1] < Math.min(distances[0], distances[2]) ? 10d : 0d);
+//		observations.add(distances[2] < Math.min(distances[0], distances[1]) ? 10d : 0d);
+		
 		player.setInputs(observations.stream().mapToDouble(d -> d).toArray());
 		observations.clear();
 	}
@@ -177,19 +182,38 @@ public strictfp class Snake {
 		dir = dir.multiply(rotationMatrix_180);
 		
 		int distance = 1;
-		double nogoValue = 1;
-		double neutralValue = 0.5;
-		double gotoValue = 0;
 		
-		for ( int size = 3; size <= 5; size += 2) {
+		double nogoValue = 0;
+		double neutralValue = 50;
+		double gotoValue = 100;
+		
+		Map<Integer, Tile> shortestPath = new HashMap<>();
+		Map<Tile, Double> tileObservationValues = new HashMap<>();
+		Map<Integer, Tile> indexed = new HashMap<>();
+		
+		List<Tile> tileOrder = new ArrayList<>();
+		
+		
+		for ( int size = 3; size <= 7; size += 2) {
+			double minFoodDistance = Double.MAX_VALUE;
+
 			for ( int n = 1; n <= 4*(size-1); n++ ) {
 				pos = pos.add(dir);
 				if ( n % (size-1) == 0 ) {
 					dir = dir.multiply(rotationMatrixCW_90);		
 				}
-				observedTiles.add(map.getTileUnderPosition(pos));
 				Tile t = map.getTileUnderPosition(pos);				
-				observations.add(t.isWall() ? nogoValue : tail.contains(t) ? nogoValue*10 : 0);
+				observedTiles.add(t);
+				
+				double tileToFoodDistance = foodTile.getCenter().subtract(t.getCenter()).euclideanNorm();
+				double tileValue = t.isWall() ? nogoValue : tail.contains(t) ? nogoValue*10 : neutralValue;
+				
+				if ( tileToFoodDistance < minFoodDistance ) {
+					shortestPath.put(size, t);
+					minFoodDistance = tileToFoodDistance;					
+				}
+				tileObservationValues.put(t, tileValue);	
+				tileOrder.add(t);
 			}
 			dir = dir.multiply(rotationMatrix_180);
 			pos = pos.add(dir); // one "left"
@@ -198,10 +222,27 @@ public strictfp class Snake {
 			dir = dir.multiply(rotationMatrixCW_90); // "look" "right"
 			distance++;
 		}
+		
+		
+		Optional<Tile> nogoTile = shortestPath.values().stream().filter(t-> t.isWall() || tail.contains(t)).findFirst();
+		
+		tileOrder.stream().forEachOrdered(t->{
+			Double tileValue = tileObservationValues.get(t);
+			
+			if ( !nogoTile.isPresent() && shortestPath.containsValue(t) ) {
+				tileValue = gotoValue;
+				tileObservationValues.put(t, tileValue);
+			}
+			
+			observations.add(tileValue);
+		});
+		
+		
+		
 	}
 
 	private void foodTileFound() {
-		size += 2;
+		size += 1;
 //		energy += size*energySizeMultiplzer;
 		energy += 100;
 		foodTile = map.getRandomTile();

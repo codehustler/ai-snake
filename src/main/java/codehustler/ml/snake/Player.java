@@ -15,6 +15,9 @@ public interface Player extends Comparable<Player> {
 	long getScore();
 	void setScore(long score);
 	
+	int getLives();
+	void setLives(int score);
+	
 	long getSteps();
 	void setSteps(long steps);
 	

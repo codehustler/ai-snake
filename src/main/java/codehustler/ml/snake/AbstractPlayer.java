@@ -14,6 +14,9 @@ public abstract class AbstractPlayer implements Player {
 	protected long steps;
 	
 	@Getter @Setter
+	protected int lives;
+	
+	@Getter @Setter
 	protected double exploration;
 	
 	@Setter

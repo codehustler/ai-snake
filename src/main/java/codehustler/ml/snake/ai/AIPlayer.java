@@ -36,6 +36,7 @@ public class AIPlayer extends AbstractPlayer {
 
 	public AIPlayer() {
 		this.uuid = UUID.randomUUID().toString();
+		this.lives = 3;
 //		createBasicModel();
 	}
 

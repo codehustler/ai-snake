@@ -34,6 +34,7 @@ public strictfp class Snake {
 
 	private int bodyLength = 4;
 	private EvictingQueue<Tile> tail = EvictingQueue.create(bodyLength);
+	private Tile headTile;
 
 	private boolean gameOver = false;
 
@@ -95,19 +96,19 @@ public strictfp class Snake {
 		}
 
 		this.position = position.add(velocity);
-		Tile occupiedTile = map.getTileUnderPosition(position);
+		headTile = map.getTileUnderPosition(position);
 
-		exploredTiles.add(occupiedTile);
+		exploredTiles.add(headTile);
 
 		player.setExploration((double) exploredTiles.size() / map.getFloorTileCount());
 
-		if (occupiedTile.equals(foodTile)) {
+		if (headTile.equals(foodTile)) {
 			foodTileFound();
 		}
 
-		tail.add(occupiedTile);
+		tail.add(headTile);
 
-		List<Tile> headInTailTiles = tail.stream().filter(t -> t.equals(occupiedTile)).collect(Collectors.toList());
+		List<Tile> headInTailTiles = tail.stream().filter(t -> t.equals(headTile)).collect(Collectors.toList());
 		if (headInTailTiles.size() > 1) {
 			gameOver(CauseOfDeath.SUICIDE);
 			return;
@@ -145,8 +146,9 @@ public strictfp class Snake {
 	}
 
 	private void gameOver(CauseOfDeath cod) {
-		this.causeOfDeath = cod;
-		this.gameOver = true;
+		causeOfDeath = cod;
+		gameOver = true;
+		player.setLives(player.getLives()-1);
 	}
 
 

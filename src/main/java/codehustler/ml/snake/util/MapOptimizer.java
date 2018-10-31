@@ -1,5 +1,6 @@
 package codehustler.ml.snake.util;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -15,7 +16,7 @@ public class MapOptimizer {
 	 * combines adjacent wall tiles to wall, this drastically improves collision
 	 * detection and field of view calculations
 	 */
-	public static Set<Wall> optimizeMap(List<List<Tile>> tiles, List<Tile> forbiddenTiles) {
+	public static Set<Wall> optimizeMap(List<List<Tile>> tiles, Collection<Tile> forbiddenTiles) {
 		Set<Wall> walls = new HashSet<>();
 		
 		int maxX = tiles.get(0).size();

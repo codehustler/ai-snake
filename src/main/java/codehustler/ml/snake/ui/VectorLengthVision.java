@@ -3,14 +3,18 @@ package codehustler.ml.snake.ui;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.la4j.Matrix;
 import org.la4j.Vector;
 
 import codehustler.ml.snake.GameOptions;
 import codehustler.ml.snake.util.Algebra;
+import codehustler.ml.snake.util.MapOptimizer;
 import codehustler.ml.snake.util.NeedfulThings;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -84,11 +88,22 @@ public class VectorLengthVision implements SnakeVision {
 		Matrix matrix = Algebra.createRotationMatrix(angleIncrement);
 
 		List<Double> collisionDistances = new ArrayList<>();
+		
+		snake.getTail();
+		
+		
+		Set<Tile> tailTiles = new HashSet<>(snake.getTail());
+		tailTiles.remove(snake.getHeadTile());
+		
+		
+		Set<Wall> walls = new HashSet<>(snake.getMap().getWalls());		
+		walls.addAll(MapOptimizer.optimizeMap(snake.getMap().getTiles(), tailTiles));
+		
 
 		for (int angle = angleIncrement; angle < 360; angle += angleIncrement) {
 			
 			Vector a_b = NeedfulThings.combine(snake.getPosition(), snake.getPosition().add(visionRay));
-			Optional<Double> distanceOpt = Algebra.intersectionDistance(a_b, snake.getMap().getWalls());
+			Optional<Double> distanceOpt = Algebra.intersectionDistance(a_b, walls);
 			collisionDistances.add(distanceOpt.orElse(0d));
 			
 			visionRays.add(visionRay.multiply(distanceOpt.orElse(visionDistance) / visionDistance));

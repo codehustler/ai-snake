@@ -50,7 +50,7 @@ public class GameScreen extends JPanel {
 		int m = 15; //margin
 		
 		g.setColor(Color.WHITE);
-		g.drawLine(x.get(), y.get()+3, x.get()+5*colWidth, y.get()+3);
+		g.drawLine(x.get(), y.get()+3, x.get()+6*colWidth, y.get()+3);
 		
 		g.drawString("Score", x.get(), y.get());
 		
@@ -61,6 +61,9 @@ public class GameScreen extends JPanel {
 		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
 		
 		g.drawString("Energy", x.addAndGet(colWidth), y.get());
+		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
+		
+		g.drawString("Lives", x.addAndGet(colWidth), y.get());
 		g.drawLine(x.get()-m, y.get()-rowHeight, x.get()-m, y.get()+snakeCount*rowHeight);
 		
 		g.drawString("CoD", x.addAndGet(colWidth), y.get());
@@ -80,6 +83,7 @@ public class GameScreen extends JPanel {
 			g.drawString(""+s.getPlayer().getSteps(), x.addAndGet(colWidth), y.get());
 			g.drawString(""+(int)(s.getPlayer().getExploration()*100), x.addAndGet(colWidth), y.get());
 			g.drawString(""+s.getEnergy(), x.addAndGet(colWidth), y.get());
+			g.drawString(""+s.getPlayer().getLives(), x.addAndGet(colWidth), y.get());
 			g.drawString(""+(s.getCauseOfDeath() != null ? s.getCauseOfDeath() : ""), x.addAndGet(colWidth), y.get());
 		});
 		

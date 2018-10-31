@@ -1,5 +1,7 @@
 package codehustler.ml.snake.ui;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,6 +70,16 @@ public class Tile {
 
 	public boolean isWall() {
 		return value == 1;
+	}
+	
+	public void fillTile(Graphics2D g) {
+		g.fillRect((int) this.getAddress().get(0) * Tile.TILE_SIZE, (int) this.getAddress().get(1) * Tile.TILE_SIZE,
+				Tile.TILE_SIZE, Tile.TILE_SIZE);
+	}
+
+	public void drawTileBorder(Graphics2D g) {
+		g.drawRect((int) this.getAddress().get(0) * Tile.TILE_SIZE, (int) this.getAddress().get(1) * Tile.TILE_SIZE,
+				Tile.TILE_SIZE, Tile.TILE_SIZE);
 	}
 	
 }

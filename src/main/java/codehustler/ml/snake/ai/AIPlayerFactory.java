@@ -21,6 +21,8 @@ public class AIPlayerFactory implements PlayerFactory {
 	private final int populationSize;
 	
 	private Set<Player> population = new HashSet<>();
+	
+	private Player record = null;
 
 
 	public Player createAIPlayer(AIPlayer player) {
@@ -36,19 +38,17 @@ public class AIPlayerFactory implements PlayerFactory {
 		int newRandomPlayers = (int) (populationSize-(playersToKeep+playersToBreed));
 
 //		System.out.println("generation result: ");
-//		Optional<Player> best = population.stream().sorted().collect(Collectors.maxBy(Comparator.naturalOrder()));
+		Optional<Player> best = population.stream().sorted().collect(Collectors.maxBy(Comparator.naturalOrder()));
 		
-//		best.ifPresent(p->{
+		best.ifPresent(p->{
 //			System.out.println("best: " + p.getScore() + "_" + (int)(p.getExploration()*100));
-////			p.save("score_" + ((int)p.getScore()) + "");			
-//		});
+			if ( record == null || p.getScore() > record.getScore() ) {
+				record = p;
+			}
+		});
 		
 		List<Player> survivors = population.stream().sorted()
 				.skip(populationSize  - playersToKeep).collect(Collectors.toList());
-		
-//		survivors.stream().sorted().forEach(p->{
-//			System.out.println(p.getScore() + "_" + p.getSteps());
-//		});
 		
 		List<Player> newBorns = IntStream.range(0, playersToBreed)
 				.mapToObj(n -> createAIPlayer((AIPlayer)survivors.get(R.nextInt(survivors.size()))))

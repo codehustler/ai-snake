@@ -28,9 +28,8 @@ public class AIPlayer extends AbstractPlayer {
 	private final String uuid; 
 
 	private NeuralNetwork<BackPropagation> model;	
-	private double mutationRate = 5.0;
+	private double mutationRate = 1.5;
 	
-	private int inputSize = 24+3 /*x/y distance to food*/;
 	private int outputSize = 3;
 	
 	BackPropagation backPropagationLR = new BackPropagation();
@@ -46,12 +45,11 @@ public class AIPlayer extends AbstractPlayer {
 		cloneModel(otherPlayer.getModel());
 	}
 
-	public AIPlayer(String weightsFile) {
-		this.uuid = UUID.randomUUID().toString();
-		//TODO
+//	public AIPlayer(String weightsFile) {
+//		this.uuid = UUID.randomUUID().toString();
 //		createBasicModel();
-		restore(weightsFile);
-	}
+//		restore(weightsFile);
+//	}
 	
 	private MultiLayerPerceptron createBasicModel(int inputSize) {
 		int[] layerConfig = new int[] { inputSize, inputSize, outputSize };
@@ -74,9 +72,9 @@ public class AIPlayer extends AbstractPlayer {
 
 	public void setInputs(double[] inputs) {
 
-		if ( model == null ) {
+		if ( model == null ) {			
 			model = createBasicModel(inputs.length);
-		}
+		} 
 		
 //		inputs = maxNormalize(inputs);
 //		inputs = invertInputs(inputs);
@@ -89,6 +87,9 @@ public class AIPlayer extends AbstractPlayer {
 		model.calculate();
 
 		double[] output = model.getOutput();
+		
+//		Arrays.stream(output).forEach(i -> System.out.print(i + "  ###  "));
+//		System.out.println();System.out.println();System.out.println();
 		
 		double left = output[0];
 		double straight = output[1];
@@ -116,18 +117,6 @@ public class AIPlayer extends AbstractPlayer {
 		this.score--;
 	}
 	
-	public static double[] invertInputs(double[] input) {
-		for (int n = 0; n < input.length; n++ ) {
-			input[n] = 1/input[n];
-		}
-		return input;
-	}
-	
-	public static double[] maxNormalize(double[] input) {
-		Double max = Math.min(Arrays.stream(input).boxed().collect(Collectors.maxBy(Double::compareTo)).get(), 40000);
-		return Arrays.stream(input).boxed().map(v -> v / max).mapToDouble(Double::doubleValue).toArray();
-	}
-
 	@Override
 	public void save(String name) {
 		WeightsManager.saveWeights(model.getWeights(), name + ".weights");

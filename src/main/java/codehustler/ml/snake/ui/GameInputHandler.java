@@ -5,6 +5,7 @@ import java.awt.event.KeyListener;
 import java.util.HashSet;
 import java.util.Set;
 
+import codehustler.ml.snake.GameOptions;
 import codehustler.ml.snake.HumanPlayer;
 import codehustler.ml.snake.Player;
 import lombok.NonNull;
@@ -53,9 +54,9 @@ public class GameInputHandler implements KeyListener {
 		} else if ( e.getKeyChar() == 'k' ) {
 			game.killCurrentPopulation();
 		} else if ( e.getKeyChar() == 'r' ) {
-			game.toggleRender();
+			GameOptions.toggleRender();
 		} else if ( e.getKeyChar() == 'v' ) {
-			game.toggleRenderFieldOfView();
+			GameOptions.toggleRenderFieldOfView();
 		} 
 	}
 }

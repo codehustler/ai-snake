@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 import javax.swing.JFrame;
 
+import codehustler.ml.snake.GameOptions;
 import codehustler.ml.snake.HumanPlayer;
 import codehustler.ml.snake.Player;
 import codehustler.ml.snake.PlayerFactory;
@@ -43,10 +44,6 @@ public class SnakeGame extends JFrame {
 	@Setter
 	private int selectedDelay = FAST_DELAY;
 
-	private boolean rendergame = true;
-
-	@Getter
-	private boolean renderFieldOfView = false;
 
 	@Getter
 	private long timecode = 0;
@@ -114,7 +111,7 @@ public class SnakeGame extends JFrame {
 
 		while (true) {
 			updateGame();
-			if (rendergame && selectedDelay > 0) {
+			if (GameOptions.isRendergame() && selectedDelay > 0) {
 				try {
 					Thread.sleep(selectedDelay);
 				} catch (InterruptedException e) {
@@ -142,7 +139,7 @@ public class SnakeGame extends JFrame {
 		highScore = (int) Math.max(popBest.getScore(), highScore);
 		
 
-		System.out.println(String.format("Suicide: %s Collision: %s Starvation: %s Best: %s", totalSuicideRate,
+		System.out.println(String.format("Generation: %s Suicide: %s Collision: %s Starvation: %s Best: %s", generationCounter, totalSuicideRate,
 				totalCollisionRate, totalStarvationRate, popBest.getScore()));
 	}
 
@@ -169,21 +166,11 @@ public class SnakeGame extends JFrame {
 			resetPopulation();
 		}
 
-		snakes.parallelStream().forEach(Snake::update);		
+		snakes.stream().forEach(Snake::update);		
 		this.setTitle(String.format("Snake - Gen: %s Best: %s", generationCounter, highScore));
 		
-		boolean renderOverwrite = rendergame;
-		
-//		Player popBest = snakes.stream().map(Snake::getPlayer).sorted().collect(Collectors.maxBy(Comparator.naturalOrder())).get();
-//		if ( popSize == 1 && popBest.getScore() > highScore ) {
-//			renderOverwrite = true;
-//			selectedDelay = SLOW_DELAY;
-//		} else {
-//			selectedDelay = FAST_DELAY;
-//		}
-		
 
-		if (rendergame || renderOverwrite) {
+		if (GameOptions.isRendergame() ) {
 			gameScreen.repaint();
 		}
 
@@ -202,11 +189,4 @@ public class SnakeGame extends JFrame {
 		snakes.forEach(m -> m.setGameOver(true));
 	}
 
-	public void toggleRender() {
-		rendergame = !rendergame;
-	}
-
-	public void toggleRenderFieldOfView() {
-		renderFieldOfView = !renderFieldOfView;
-	}
 }
